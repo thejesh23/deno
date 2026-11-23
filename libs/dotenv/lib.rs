@@ -465,6 +465,12 @@ fn apply_value_substitution(
           break;
         }
       }
+      if end == i + 1 {
+        // a `$` that isn't followed by a variable name is kept literally
+        output.push('$');
+        i += 1;
+        continue;
+      }
       let substitution_name = &value[i + 1..end];
       lookup_substitution(
         sys,
@@ -1002,6 +1008,28 @@ u4QuUoobAgMBAAE=
       E=$C_D${C_D}
       "#,
       &[("C_D", "value1000"), ("E", "value1000value1000")],
+    );
+  }
+
+  #[test]
+  fn test_dollar_without_variable_name_is_kept() {
+    let sys = sys_traits::impls::InMemorySys::default();
+    assert_parsed_eq_with_substitution(
+      &sys,
+      r#"
+      KEY1=abc$
+      KEY2="100% $ off"
+      KEY3="a$-b$"
+      KEY4=value
+      KEY5="$ $KEY4 $"
+      "#,
+      &[
+        ("KEY1", "abc$"),
+        ("KEY2", "100% $ off"),
+        ("KEY3", "a$-b$"),
+        ("KEY4", "value"),
+        ("KEY5", "$ value $"),
+      ],
     );
   }
 
