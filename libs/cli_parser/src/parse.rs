@@ -62,14 +62,16 @@ fn resolve_subcommand<'a>(
       // Long flag - check if it's a global flag
       let flag_name = arg.trim_start_matches('-');
       let flag_name = flag_name.split('=').next().unwrap_or(flag_name);
-      if let Some(arg_def) = def
-        .all_args()
-        .find(|a| a.global && a.long == Some(flag_name))
-      {
+      if let Some(arg_def) = def.all_args().find(|a| {
+        a.global
+          && (a.long == Some(flag_name) || a.long_aliases.contains(&flag_name))
+      }) {
         i += 1;
-        // Skip the value if this flag takes one
+        // Skip the value if this flag takes one. A `require_equals` flag
+        // only takes a value via `=`, never from the next token.
         if arg_def.num_args != NumArgs::Exact(0)
           && arg_def.action != ArgAction::SetTrue
+          && !arg_def.require_equals
           && !arg.contains('=')
         {
           i += 1;
@@ -86,6 +88,7 @@ fn resolve_subcommand<'a>(
         i += 1;
         if arg_def.num_args != NumArgs::Exact(0)
           && arg_def.action != ArgAction::SetTrue
+          && !arg_def.require_equals
           && arg.len() == 2
         {
           i += 1;

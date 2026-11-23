@@ -2838,6 +2838,18 @@ fn run_env_file_default() {
 }
 
 #[test]
+fn env_file_global_before_subcommand() {
+  // `--env-file` requires `=` for a value, so a bare `--env-file` (or its
+  // `--env` alias) before the subcommand must not swallow the subcommand.
+  let expected =
+    flags_from_vec(svec!["deno", "run", "--env-file", "script.ts"]).unwrap();
+  for flag in ["--env-file", "--env"] {
+    let r = flags_from_vec(svec!["deno", flag, "run", "script.ts"]);
+    assert_eq!(r.unwrap(), expected, "{flag}");
+  }
+}
+
+#[test]
 fn run_no_code_cache() {
   let r = flags_from_vec(svec!["deno", "--no-code-cache", "script.ts"]);
   assert_eq!(
